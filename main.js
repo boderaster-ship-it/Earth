@@ -11,6 +11,20 @@ const airDrag = 0.01;
 const maxCompression = 150;
 const gravity = 2000; // px/s^2
 
+// Player dimensions
+const bodyWidth = 20;
+const bodyHeight = 60;
+const headRadius = 15;
+const upperArmLength = 25;
+const lowerArmLength = 20;
+const upperLegLength = 30;
+const lowerLegLength = 30;
+const armWidth = 6;
+const legWidth = 8;
+const jointRadius = 3;
+// distance from body center to feet
+const bodyCenterOffset = upperLegLength + lowerLegLength + bodyHeight/2;
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let width, height;
@@ -190,6 +204,55 @@ function land(){
   hud.combo.textContent = 'x'+combo;
 }
 
+function drawArm(side){
+  ctx.save();
+  const shoulderX = side * bodyWidth/2;
+  const shoulderY = -bodyHeight/2 + 10;
+  ctx.translate(shoulderX, shoulderY);
+  ctx.rotate(side * 0.1);
+  ctx.fillRect(-armWidth/2, 0, armWidth, upperArmLength);
+  ctx.beginPath();
+  ctx.arc(0, upperArmLength, jointRadius, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(-armWidth/2, upperArmLength, armWidth, lowerArmLength);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(shoulderX, shoulderY, jointRadius, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawLeg(side){
+  ctx.save();
+  const hipX = side * bodyWidth/4;
+  const hipY = bodyHeight/2;
+  ctx.translate(hipX, hipY);
+  ctx.rotate(side * 0.05);
+  ctx.fillRect(-legWidth/2, 0, legWidth, upperLegLength);
+  ctx.beginPath();
+  ctx.arc(0, upperLegLength, jointRadius, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(-legWidth/2, upperLegLength, legWidth, lowerLegLength);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(hipX, hipY, jointRadius, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawPlayer(){
+  ctx.fillStyle = '#0af';
+  // body
+  ctx.fillRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
+  // head
+  ctx.beginPath();
+  ctx.arc(0, -bodyHeight/2 - headRadius, headRadius, 0, Math.PI*2);
+  ctx.fill();
+  // limbs
+  drawArm(-1);
+  drawArm(1);
+  drawLeg(-1);
+  drawLeg(1);
+}
+
 function render(){
   ctx.clearRect(0,0,width,height);
   ctx.save();
@@ -201,10 +264,9 @@ function render(){
   ctx.fillRect(-200,-compression,400,20);
   // Player
   ctx.save();
-  ctx.translate(0,-pos-40);
+  ctx.translate(0,-pos - bodyCenterOffset);
   ctx.rotate(rot);
-  ctx.fillStyle = '#0af';
-  ctx.fillRect(-20,-40,40,80);
+  drawPlayer();
   ctx.restore();
   ctx.restore();
   hud.timer.textContent = Math.ceil(timer);

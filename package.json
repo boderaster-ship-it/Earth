@@ -1,0 +1,8 @@
+{
+  "name": "earth-game",
+  "version": "1.0.0",
+  "description": "Simple browser game with articulated player",
+  "scripts": {
+    "test": "node --check main.js"
+  }
+}
