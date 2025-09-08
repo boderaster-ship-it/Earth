@@ -1,0 +1,54 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #fff;
+  touch-action: none;
+  overscroll-behavior: none;
+  font-family: sans-serif;
+}
+#game {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  background: #111;
+}
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  font-size: 16px;
+}
+#hud button {
+  pointer-events: auto;
+  font-size: 20px;
+  padding: 8px;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+}
+#rating {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  pointer-events: none;
+}
+#tips {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.hidden { display: none; }
