@@ -1,1 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Globe Driver</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Three.js for rendering -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb); // sky color
 
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x888888));
+
+    const RADIUS = 5;
+    const loader = new THREE.TextureLoader();
+    const earthTexture = loader.load('https://threejs.org/examples/textures/land_ocean_ice_cloud_2048.jpg');
+    const bumpTexture = loader.load('https://threejs.org/examples/textures/earthbump1k.jpg');
+    const specTexture = loader.load('https://threejs.org/examples/textures/earthspec1k.jpg');
+
+    const earthGeometry = new THREE.SphereGeometry(RADIUS, 64, 64);
+    const earthMaterial = new THREE.MeshPhongMaterial({
+      map: earthTexture,
+      bumpMap: bumpTexture,
+      bumpScale: 0.05,
+      specularMap: specTexture,
+      specular: new THREE.Color('grey')
+    });
+    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+    scene.add(earth);
+
+    const CAR_HEIGHT = 0.2;
+    const carGeometry = new THREE.BoxGeometry(0.6, 0.3, 1);
+    const carMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const car = new THREE.Mesh(carGeometry, carMaterial);
+    scene.add(car);
+
+    let lat = 0; // radians
+    let lon = 0; // radians
+    const speed = 0.02;
+    const keys = {};
+
+    function updateCar() {
+      if (keys['ArrowUp'] || keys['w']) lat += speed;
+      if (keys['ArrowDown'] || keys['s']) lat -= speed;
+      if (keys['ArrowLeft'] || keys['a']) lon -= speed;
+      if (keys['ArrowRight'] || keys['d']) lon += speed;
+
+      const cosLat = Math.cos(lat);
+      const x = (RADIUS + CAR_HEIGHT) * Math.cos(lon) * cosLat;
+      const y = (RADIUS + CAR_HEIGHT) * Math.sin(lat);
+      const z = (RADIUS + CAR_HEIGHT) * Math.sin(lon) * cosLat;
+      car.position.set(x, y, z);
+
+      const up = car.position.clone().normalize();
+      const east = new THREE.Vector3(-Math.sin(lon), 0, Math.cos(lon));
+      const north = new THREE.Vector3(-Math.sin(lat) * Math.cos(lon), Math.cos(lat), -Math.sin(lat) * Math.sin(lon));
+      const forward = north.clone();
+
+      const m = new THREE.Matrix4().lookAt(new THREE.Vector3(0, 0, 0), forward, up);
+      car.quaternion.setFromRotationMatrix(m);
+
+      const camOffset = up.clone().multiplyScalar(1).add(forward.clone().multiplyScalar(-2));
+      camera.position.copy(car.position).add(camOffset);
+      camera.lookAt(car.position);
+    }
+
+    window.addEventListener('keydown', (e) => keys[e.key] = true);
+    window.addEventListener('keyup', (e) => keys[e.key] = false);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      updateCar();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
