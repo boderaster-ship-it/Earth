@@ -9,9 +9,8 @@ Minimaler Prototyp eines Physik-Arcade-Spiels im Hochformat. Vollständige Steue
 3. Assets werden vom Service Worker gecacht; danach offline spielbar.
 
 ## Steuerung
-- **Tippen/Halten:** Trampolin spannen und springen.
-- **Wischen hoch/runter:** Extra-Impuls oder abbremsen.
-- **Wischen links/rechts:** Rotation in der Luft.
+- **Tippen und halten:** Trampolin spannen und springen.
+- **Erneut tippen und halten in der Luft:** Rotation.
 - **Zweitfinger tippen:** Trick auslösen (Multiplikator).
 
 ## Physik-Parameter

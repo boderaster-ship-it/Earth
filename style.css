@@ -1,17 +1,17 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #000;
+  background: #222;
   color: #fff;
   touch-action: none;
   overscroll-behavior: none;
-  font-family: sans-serif;
+  font-family: 'Helvetica Neue', sans-serif;
 }
 #game {
   width: 100vw;
   height: 100vh;
   display: block;
-  background: #111;
+  background: transparent;
 }
 #hud {
   position: absolute;
@@ -23,15 +23,24 @@ html, body {
   justify-content: space-between;
   pointer-events: none;
   font-size: 16px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
 }
 #hud button {
   pointer-events: auto;
   font-size: 20px;
   padding: 8px;
-  background: #222;
+  background: #444;
   color: #fff;
   border: none;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+#hud div {
+  background: rgba(0,0,0,0.4);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 #rating {
   position: absolute;
