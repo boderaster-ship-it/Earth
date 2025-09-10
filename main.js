@@ -47,8 +47,11 @@ let score = 0;
 let combo = 1;
 let timer = 60;
 let trick = false;
-let lastSwipe = {x:0,y:0};
-let touchStart = {x:0,y:0};
+let spinning = false;
+const spinSpeed = 6;
+
+let armAngle = 0;
+let legAngle = 0;
 
 const hud = {
   score: document.getElementById('score'),
@@ -80,40 +83,26 @@ function vibrate(ms){
 // Touch handling
 canvas.addEventListener('touchstart', e => {
   if(e.touches.length===1){
-    charging = true;
-    touchStart.x = e.touches[0].clientX;
-    touchStart.y = e.touches[0].clientY;
-    lastSwipe.x = touchStart.x;
-    lastSwipe.y = touchStart.y;
-  }
-  if(e.touches.length===2){
-    if(inAir){
-      trick = true;
+    if(!inAir){
+      charging = true;
+    }else{
+      spinning = true;
+      omega = spinSpeed;
     }
   }
-  e.preventDefault();
-});
-
-canvas.addEventListener('touchmove', e => {
-  if(charging && e.touches.length){
-    lastSwipe.x = e.touches[0].clientX;
-    lastSwipe.y = e.touches[0].clientY;
+  if(e.touches.length===2 && inAir){
+    trick = true;
   }
   e.preventDefault();
 });
 
 canvas.addEventListener('touchend', e => {
   if(charging){
-    const dx = lastSwipe.x - touchStart.x;
-    const dy = lastSwipe.y - touchStart.y;
-    const threshold = 30;
-    if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold){
-      omega += (dx>0?1:-1)*5;
-    }else if(Math.abs(dy) > threshold){
-      vel += (-dy/threshold)*300;
-    }
     charging = false;
-    // release spring
+  }
+  if(spinning){
+    spinning = false;
+    omega = 0;
   }
   e.preventDefault();
 });
@@ -124,7 +113,7 @@ hud.restart.addEventListener('click', () => location.reload());
 hud.mute.addEventListener('click', () => {muted=!muted; hud.mute.textContent = muted?'🔈':'🔇';});
 
 // Tooltips
-const tips = ['Tippen/Halten: Springen', 'Wischen: Impuls/Rotation', 'Zweitfinger: Trick'];
+const tips = ['Tippen und halten: Springen', 'Erneut tippen und halten: Drehung', 'Zweitfinger: Trick'];
 let tipIndex = 0;
 function showNextTip(){
   if(tipIndex >= tips.length) return hud.tips.classList.add('hidden');
@@ -158,6 +147,11 @@ function update(dt){
     compression = Math.min(maxCompression, compression + 200*dt);
     pos = -compression;
   }
+  // limb targets
+  const targetArm = charging ? -0.5 : inAir ? 0.8 : 0;
+  const targetLeg = charging ? 0.3 : inAir ? -0.4 : 0;
+  armAngle += (targetArm - armAngle) * 5 * dt;
+  legAngle += (targetLeg - legAngle) * 5 * dt;
   if(!charging && !inAir){
     // spring dynamics
     const force = -k*pos - c*vel;
@@ -174,10 +168,16 @@ function update(dt){
     vel -= gravity*dt;
     vel *= (1-airDrag);
     pos += vel*dt;
-    omega *= (1-airDrag);
+    if(spinning){
+      omega = spinSpeed;
+    } else {
+      omega *= (1-airDrag);
+    }
     rot += omega*dt;
     if(pos<=0 && vel<0){
       inAir = false;
+      spinning = false;
+      omega = 0;
       land();
       pos = 0;
     }
@@ -209,12 +209,16 @@ function drawArm(side){
   const shoulderX = side * bodyWidth/2;
   const shoulderY = -bodyHeight/2 + 10;
   ctx.translate(shoulderX, shoulderY);
-  ctx.rotate(side * 0.1);
+  ctx.rotate(armAngle * side);
   ctx.fillRect(-armWidth/2, 0, armWidth, upperArmLength);
   ctx.beginPath();
   ctx.arc(0, upperArmLength, jointRadius, 0, Math.PI*2);
   ctx.fill();
-  ctx.fillRect(-armWidth/2, upperArmLength, armWidth, lowerArmLength);
+  ctx.save();
+  ctx.translate(0, upperArmLength);
+  ctx.rotate(armAngle * 0.5 * side);
+  ctx.fillRect(-armWidth/2, 0, armWidth, lowerArmLength);
+  ctx.restore();
   ctx.restore();
   ctx.beginPath();
   ctx.arc(shoulderX, shoulderY, jointRadius, 0, Math.PI*2);
@@ -223,15 +227,19 @@ function drawArm(side){
 
 function drawLeg(side){
   ctx.save();
-  const hipX = side * bodyWidth/4;
+  const hipX = side * bodyWidth/3;
   const hipY = bodyHeight/2;
   ctx.translate(hipX, hipY);
-  ctx.rotate(side * 0.05);
+  ctx.rotate(legAngle * side);
   ctx.fillRect(-legWidth/2, 0, legWidth, upperLegLength);
   ctx.beginPath();
   ctx.arc(0, upperLegLength, jointRadius, 0, Math.PI*2);
   ctx.fill();
-  ctx.fillRect(-legWidth/2, upperLegLength, legWidth, lowerLegLength);
+  ctx.save();
+  ctx.translate(0, upperLegLength);
+  ctx.rotate(legAngle * 0.5 * side);
+  ctx.fillRect(-legWidth/2, 0, legWidth, lowerLegLength);
+  ctx.restore();
   ctx.restore();
   ctx.beginPath();
   ctx.arc(hipX, hipY, jointRadius, 0, Math.PI*2);
@@ -239,12 +247,18 @@ function drawLeg(side){
 }
 
 function drawPlayer(){
-  ctx.fillStyle = '#0af';
   // body
+  ctx.fillStyle = '#ff4f4f';
   ctx.fillRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
+  // neck
+  ctx.fillStyle = '#f1c27d';
+  ctx.fillRect(-armWidth/2, -bodyHeight/2 - 5, armWidth, 5);
+  ctx.beginPath();
+  ctx.arc(0, -bodyHeight/2, jointRadius, 0, Math.PI*2);
+  ctx.fill();
   // head
   ctx.beginPath();
-  ctx.arc(0, -bodyHeight/2 - headRadius, headRadius, 0, Math.PI*2);
+  ctx.arc(0, -bodyHeight/2 - headRadius - 5, headRadius, 0, Math.PI*2);
   ctx.fill();
   // limbs
   drawArm(-1);
@@ -255,13 +269,24 @@ function drawPlayer(){
 
 function render(){
   ctx.clearRect(0,0,width,height);
+  // background
+  const sky = ctx.createLinearGradient(0,0,0,height);
+  sky.addColorStop(0,'#87ceeb');
+  sky.addColorStop(1,'#ffffff');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,width,height);
+
   ctx.save();
   ctx.translate(width/2,height-50);
   // Trampoline
+  const tramp = ctx.createLinearGradient(0,-compression,0,20);
+  tramp.addColorStop(0,'#444');
+  tramp.addColorStop(1,'#222');
+  ctx.fillStyle = tramp;
+  ctx.fillRect(-200, -compression, 400, 20);
+  // base
   ctx.fillStyle = '#333';
   ctx.fillRect(-200,0,400,20);
-  ctx.fillStyle = '#555';
-  ctx.fillRect(-200,-compression,400,20);
   // Player
   ctx.save();
   ctx.translate(0,-pos - bodyCenterOffset);
